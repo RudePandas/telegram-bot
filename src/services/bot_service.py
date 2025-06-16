@@ -1,14 +1,17 @@
 import logging
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, Callable
 from aiogram import Bot, Dispatcher, types
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramAPIError
 
 from ..models.config import BotConfiguration
-from ..models.enums import BotState
+from ..models.enums import BotState, HandlerPriority, MessageType
 from .handler_registry import HandlerRegistry
-from .event_manager import EventManager, DefaultEventListener
+from .event_manager import EventManager, DefaultEventListener, IEventListener
 from .message_service import MessageService
+from ..handlers.base import IMessageHandler, ICallbackHandler
+from ..handlers.message_handlers import CommandMessageHandler, TextMessageHandler, MediaMessageHandler
+from ..handlers.callback_handlers import CallbackQueryHandler
 
 
 class TelegramBotService:

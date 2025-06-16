@@ -1,12 +1,13 @@
 import asyncio
 import logging
 from datetime import datetime
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 
 from src.models.enums import MessageType
 from src.utils.bot_builder import BotBuilder
 from src.services.event_manager import IEventListener
+from src.services.bot_service import TelegramBotService
 
 
 class AdvancedEventListener(IEventListener):
@@ -311,7 +312,7 @@ async def main():
     )
     
     # 使用构建器模式创建机器人
-    bot = (BotBuilder("YOUR_BOT_TOKEN")
+    bot = (BotBuilder("7873538563:AAHy759_5lzZu8QNTKlLkpLkEE3QecvH3ys")
            .with_parse_mode("HTML")
            .with_drop_pending_updates(True)
            .build())

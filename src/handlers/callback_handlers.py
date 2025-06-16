@@ -1,6 +1,7 @@
-from typing import Optional, Callable
+from typing import Optional, Callable, Any
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
+import asyncio
 
 from .base import ICallbackHandler
 
