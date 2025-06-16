@@ -312,7 +312,7 @@ async def main():
     )
     
     # 使用构建器模式创建机器人
-    bot = (BotBuilder("7873538563:AAHy759_5lzZu8QNTKlLkpLkEE3QecvH3ys")
+    bot = (BotBuilder("YOUR_BOT_TOKEN")
            .with_parse_mode("HTML")
            .with_drop_pending_updates(True)
            .build())
