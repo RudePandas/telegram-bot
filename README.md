@@ -1,274 +1,211 @@
-# Telegram机器人框架
+# Telegram Bot Service
 
-这是一个基于aiogram 3.x的Telegram机器人框架，采用面向对象设计，提供了优雅的API和完整的类型提示。
+一个高性能、可扩展的 Telegram 机器人服务框架，支持 Webhook 模式和消息队列。
 
 ## 特性
 
-- 🚀 异步消息处理
-- 📦 模块化架构
-- 🔌 可扩展的处理器系统
-- 🎭 事件驱动
-- 🛡️ 完整的错误处理
-- 📝 流畅的API设计
-- 🔒 类型安全
+- ✨ 支持 Webhook 和轮询两种模式
+- 🚀 基于 aiogram 的异步实现
+- 🔒 线程安全的单例模式
+- 📦 Kafka 消息队列集成
+- 🎯 模块化的事件处理系统
+- 📝 完整的日志记录
+- 🔌 可扩展的插件系统
+- 💾 MySQL/MariaDB 数据持久化
+- 🔄 自动重连和错误恢复
+- 🔑 SSL 证书支持
 
-## 面向对象高级特性
+## 系统要求
 
-### 1. 抽象类和接口设计
-```python
-class IEventListener(ABC):
-    """事件监听器接口"""
-    @abstractmethod
-    async def on_startup(self, bot: 'TelegramBotService') -> None:
-        pass
-```
-- 使用 `ABC` (Abstract Base Class) 创建抽象基类
-- 使用 `@abstractmethod` 定义必须实现的方法
-- 强制子类实现特定的接口方法
-
-### 2. 依赖注入和控制反转
-```python
-class MessageService:
-    def __init__(self, bot: Bot, event_manager: EventManager):
-        self._bot = bot
-        self._event_manager = event_manager
-```
-- 通过构造函数注入依赖
-- 降低组件间的耦合度
-- 便于单元测试和模块替换
-
-### 3. 建造者模式（Builder Pattern）
-```python
-bot = (BotBuilder("YOUR_BOT_TOKEN")
-       .with_parse_mode("HTML")
-       .with_drop_pending_updates(True)
-       .build())
-```
-- 使用流式接口（Fluent Interface）
-- 分步骤构建复杂对象
-- 提供优雅的API设计
-
-### 4. 事件驱动设计
-```python
-class EventManager:
-    def __init__(self):
-        self._listeners: List[IEventListener] = []
-    
-    async def emit_startup(self, bot: 'TelegramBotService') -> None:
-        for listener in self._listeners:
-            await listener.on_startup(bot)
-```
-- 观察者模式的实现
-- 事件发布/订阅机制
-- 松耦合的组件通信
-
-### 5. 责任链模式（Chain of Responsibility）
-```python
-class HandlerRegistry:
-    async def _process_message(self, message: types.Message, state: FSMContext) -> None:
-        handlers = self.get_message_handlers()
-        for handler in handlers:
-            if await handler.can_handle(message, state):
-                await handler.handle(message, self, state)
-                break
-```
-- 处理器链式处理消息
-- 动态的处理器优先级
-- 灵活的处理器注册机制
-
-### 6. 数据类和不可变对象
-```python
-@dataclass
-class BotConfiguration:
-    token: str
-    parse_mode: str = "HTML"
-    disable_web_page_preview: bool = False
-```
-- 使用 `@dataclass` 装饰器
-- 自动生成特殊方法
-- 不可变配置对象
-
-### 7. 枚举类型
-```python
-class BotState(Enum):
-    IDLE = "idle"
-    STARTING = "starting"
-    RUNNING = "running"
-```
-- 使用 `Enum` 定义状态
-- 类型安全的状态管理
-- 自文档化的代码
-
-### 8. 上下文管理器
-```python
-class TelegramBotService:
-    async def __aenter__(self):
-        return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.stop()
-```
-- 实现异步上下文管理器
-- 自动资源管理
-- 优雅的错误处理
-
-### 9. 组合优于继承
-```python
-class TelegramBotService:
-    def __init__(self, config: BotConfiguration):
-        self.handler_registry = HandlerRegistry()
-        self.event_manager = EventManager()
-        self.message_service = MessageService(self.bot, self.event_manager)
-```
-- 使用组合而不是继承
-- 更灵活的功能扩展
-- 更好的代码重用
-
-### 10. 类型注解和泛型
-```python
-def register_message_handler(self, handler: IMessageHandler) -> None:
-    self._message_handlers.append(handler)
-```
-- 使用类型提示
-- 支持静态类型检查
-- 提高代码可读性和可维护性
-
-### 11. 异步编程支持
-```python
-async def handle_message(self, message: Message, bot: 'TelegramBotService', state: FSMContext) -> Any:
-    try:
-        if asyncio.iscoroutinefunction(self.callback):
-            return await self.callback(message, bot, state)
-```
-- 异步方法和协程
-- 非阻塞I/O操作
-- 高效的并发处理
-
-## 设计优势
-
-### 1. 可维护性
-- 清晰的代码结构
-- 易于理解的组件关系
-- 方便的调试和测试
-
-### 2. 可扩展性
-- 容易添加新功能
-- 灵活的组件替换
-- 松耦合的设计
-
-### 3. 可重用性
-- 模块化的组件
-- 通用的接口设计
-- 可移植的代码
-
-### 4. 类型安全
-- 编译时错误检查
-- IDE智能提示
-- 减少运行时错误
+- Python 3.7+
+- MySQL/MariaDB
+- Kafka
+- SSL 证书（用于 Webhook 模式）
 
 ## 安装
 
 1. 克隆仓库：
-
 ```bash
 git clone https://github.com/yourusername/telegram-bot.git
 cd telegram-bot
 ```
 
-2. 安装依赖：
+2. 创建虚拟环境：
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# 或
+.\venv\Scripts\activate  # Windows
+```
 
+3. 安装依赖：
 ```bash
 pip install -r requirements.txt
 ```
 
-## 快速开始
+## 配置
 
-1. 在 `main.py` 中设置你的机器人token：
+1. 数据库配置：
+```python
+await DatabaseConnection.initialize(
+    host='localhost',
+    port=3306,
+    user='your_user',
+    password='your_password',
+    db='telegram_bots'
+)
+```
+
+2. Bot 配置：
+```python
+config = BotConfiguration(
+    token="your_bot_token",
+    name="your_bot_name",
+    # Webhook 配置（可选）
+    webhook_host="https://your-domain.com",
+    webhook_path="/webhook/123",
+    webhook_secret_token="your_secret_token",
+    webhook_max_connections=40,
+    webhook_certificate_path="path/to/cert.pem",
+    webhook_certificate_key_path="path/to/private.key"
+)
+```
+
+3. Kafka 配置：
+```python
+kafka_config = {
+    "bootstrap_servers": "localhost:9092",
+    "topic": "telegram_updates",
+    "group_id": "bot_group"
+}
+```
+
+## 使用示例
+
+### 1. 基本使用
 
 ```python
-bot = (BotBuilder("YOUR_BOT_TOKEN")
-       .with_parse_mode("HTML")
-       .with_drop_pending_updates(True)
-       .build())
+import asyncio
+from src.services.bot_manager import BotManager
+from src.models.config import BotConfiguration
+
+async def main():
+    # 获取 BotManager 实例
+    bot_manager = await BotManager.get_instance()
+    
+    # 初始化
+    await bot_manager.initialize(
+        db_url="mysql://user:pass@localhost/telegram_bots",
+        kafka_config={
+            "bootstrap_servers": "localhost:9092",
+            "topic": "telegram_updates",
+            "group_id": "bot_group"
+        }
+    )
+    
+    # 配置 bot
+    config = BotConfiguration(
+        token="your_bot_token",
+        name="your_bot_name",
+        webhook_host="https://your-domain.com"
+    )
+    
+    # 注册 bot
+    bot_id = 123
+    bot = await bot_manager.register_bot(bot_id, config)
+    
+    # 启动所有 bot（Webhook 模式）
+    await bot_manager.start_all(webhook_base_url="https://your-domain.com/webhook/")
+    
+    try:
+        # 保持程序运行
+        await asyncio.Event().wait()
+    finally:
+        # 停止所有 bot
+        await bot_manager.stop_all()
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-2. 运行机器人：
+### 2. 添加消息处理器
 
-```bash
-python main.py
+```python
+from src.handlers.message_handlers import CommandMessageHandler
+
+async def start_command(message: types.Message, bot: TelegramBotService, state: FSMContext):
+    await message.reply("Hello! I'm your bot.")
+
+bot.add_command_handler("start", start_command, "Start the bot")
 ```
+
+### 3. 广播消息
+
+```python
+await bot_manager.broadcast_message(
+    message="Important announcement!",
+    bot_ids=[123, 456],  # 可选，指定特定的 bot
+    batch_size=50,
+    retry_count=3
+)
+```
+
+## Webhook 设置
+
+1. 准备 SSL 证书：
+   - 可以使用 Let's Encrypt 获取免费证书
+   - 或使用自签名证书（仅用于测试）
+
+2. 配置 Nginx：
+```nginx
+server {
+    listen 443 ssl;
+    server_name your-domain.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/private.key;
+
+    location /webhook/ {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+3. 启动 Webhook 服务器：
+   - 使用你喜欢的 Web 框架（如 FastAPI、aiohttp）
+   - 接收 Telegram 更新并发送到 Kafka
 
 ## 项目结构
 
 ```
 telegram-bot/
 ├── src/
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── enums.py
-│   │   └── config.py
-│   ├── handlers/
-│   │   ├── __init__.py
-│   │   ├── base.py
-│   │   ├── message_handlers.py
-│   │   └── callback_handlers.py
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── bot_service.py
-│   │   ├── event_manager.py
-│   │   ├── handler_registry.py
-│   │   └── message_service.py
-│   └── utils/
-│       ├── __init__.py
-│       └── bot_builder.py
-├── main.py
-├── requirements.txt
-└── README.md
-```
-
-## 使用示例
-
-### 基本命令处理器
-
-```python
-async def start_command(message: Message, bot: TelegramBotService, state: FSMContext):
-    await bot.send_message(message.chat.id, "Hello, World!")
-
-bot.add_command_handler("start", start_command)
-```
-
-### 文本消息处理器
-
-```python
-async def hello_handler(message: Message, bot: TelegramBotService, state: FSMContext):
-    await bot.send_message(message.chat.id, "你好！")
-
-bot.add_text_handler(hello_handler, contains="你好")
-```
-
-### 媒体消息处理器
-
-```python
-async def photo_handler(message: Message, bot: TelegramBotService, state: FSMContext):
-    await bot.send_message(message.chat.id, "收到图片！")
-
-bot.add_media_handler(MessageType.PHOTO, photo_handler)
-```
-
-### 自定义事件监听器
-
-```python
-class MyEventListener(IEventListener):
-    async def on_startup(self, bot: TelegramBotService) -> None:
-        print("机器人启动了！")
-
-bot.add_event_listener(MyEventListener())
+│   ├── handlers/          # 消息处理器
+│   ├── models/           # 数据模型
+│   └── services/         # 核心服务
+├── tests/               # 测试用例
+├── requirements.txt     # 项目依赖
+└── README.md           # 项目文档
 ```
 
 ## 贡献
 
-欢迎提交Pull Request和Issue！
+欢迎提交 Pull Request 或创建 Issue！
 
 ## 许可证
 
-MIT License 
+MIT License
+
+## 作者
+
+Your Name <your.email@example.com>
+
+## 更新日志
+
+### v1.0.0 (2024-03-xx)
+- 初始版本发布
+- 支持 Webhook 模式
+- 添加 Kafka 集成
+- 实现线程安全的单例模式 
