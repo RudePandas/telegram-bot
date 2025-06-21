@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Union, Optional, Callable
+from typing import Any, Union, Optional, Callable, Set
 from aiogram import Bot, Dispatcher, types
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramAPIError
@@ -28,19 +28,25 @@ class TelegramBotService:
         # 状态管理
         self.state = BotState.IDLE
         self.bot_info: Optional[types.User] = None
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"{self.__class__.__name__}_{config.token[:8]}")
         
         # 添加默认事件监听器
         self.event_manager.add_listener(DefaultEventListener(self.logger))
         
         # 注册内部处理器
         self._register_internal_handlers()
+        
+        # 存储所有聊天ID
+        self._chat_ids: Set[int] = set()
     
     def _register_internal_handlers(self) -> None:
         """注册内部处理器"""
         # 注册消息处理器
         @self.dp.message()
         async def handle_message(message: types.Message, state: FSMContext):
+            # 记录聊天ID
+            if message.chat.id:
+                self._chat_ids.add(message.chat.id)
             await self.event_manager.emit_message_received(message, self)
             await self._process_message(message, state)
         
@@ -57,6 +63,14 @@ class TelegramBotService:
         @self.dp.shutdown()
         async def on_shutdown():
             await self._on_shutdown()
+    
+    async def get_all_chat_ids(self) -> Set[int]:
+        """获取所有聊天ID"""
+        return self._chat_ids
+    
+    async def remove_chat_id(self, chat_id: int) -> None:
+        """移除聊天ID"""
+        self._chat_ids.discard(chat_id)
     
     async def _process_message(self, message: types.Message, state: FSMContext) -> None:
         """处理消息"""
@@ -193,20 +207,64 @@ class TelegramBotService:
             await self.handle_error(e)
             raise
     
-    async def start_webhook(self, webhook_url: str, **kwargs) -> None:
-        """开始webhook"""
+    async def start_webhook(self, webhook_url: Optional[str] = None, **kwargs) -> None:
+        """开始webhook模式
+        
+        Args:
+            webhook_url: 可选的webhook URL，如果不提供则从配置中获取
+            **kwargs: 传递给set_webhook的额外参数
+        """
         try:
-            await self.bot.set_webhook(webhook_url, **kwargs)
+            # 获取webhook URL
+            url = webhook_url or self.config.get_webhook_url()
+            if not url:
+                raise ValueError("Webhook URL not provided and not configured")
+            
+            # 准备webhook参数
+            webhook_params = {
+                "url": url,
+                "max_connections": self.config.webhook_max_connections,
+                "allowed_updates": self.config.allowed_updates,
+                "drop_pending_updates": self.config.drop_pending_updates
+            }
+            
+            # 添加可选参数
+            if self.config.webhook_secret_token:
+                webhook_params["secret_token"] = self.config.webhook_secret_token
+            if self.config.webhook_ip_address:
+                webhook_params["ip_address"] = self.config.webhook_ip_address
+            if self.config.webhook_certificate_path:
+                with open(self.config.webhook_certificate_path, 'rb') as cert:
+                    webhook_params["certificate"] = cert.read()
+                    
+            # 更新自定义参数
+            webhook_params.update(kwargs)
+            
+            # 设置webhook
+            await self.bot.set_webhook(**webhook_params)
+            self.logger.info(f"Webhook set to: {url}")
+            
         except Exception as e:
             await self.handle_error(e)
             raise
-    
+            
     async def stop(self) -> None:
         """停止机器人"""
         try:
+            # 删除webhook
+            await self.bot.delete_webhook()
+            # 关闭会话
             await self.bot.session.close()
         except Exception as e:
             await self.handle_error(e)
+            
+    async def get_webhook_info(self) -> types.WebhookInfo:
+        """获取webhook信息"""
+        try:
+            return await self.bot.get_webhook_info()
+        except Exception as e:
+            await self.handle_error(e)
+            raise
     
     async def __aenter__(self):
         return self
